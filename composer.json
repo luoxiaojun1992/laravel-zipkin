@@ -1,6 +1,7 @@
 {
     "name": "luoxiaojun/laravel-zipkin",
     "description": "Zipkin in Laravel",
+    "keywords": ["zipkin", "laravel"],
     "type": "library",
     "require": {
         "openzipkin/zipkin": "~1.3",
