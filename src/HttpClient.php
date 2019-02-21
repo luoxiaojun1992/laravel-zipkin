@@ -13,7 +13,7 @@ use const Zipkin\Tags\HTTP_STATUS_CODE;
 
 /**
  * Class HttpClient
- * @package Jing\Laravel\Zipkin
+ * @package Lxj\Laravel\Zipkin
  */
 class HttpClient extends GuzzleHttpClient
 {
@@ -28,25 +28,26 @@ class HttpClient extends GuzzleHttpClient
     public function send(RequestInterface $request, array $options = [])
     {
         $laravelTracer = app(Tracer::class);
-        $query = $request->getUri()->getQuery();
-        $path = $request->getUri()->getPath() . ($query ? '?' . $query : '');
+        $path = $request->getUri()->getPath();
 
         return $laravelTracer->span('Call api:' . $path, function (Span $span) use ($request, $options, $laravelTracer, $path) {
             //Inject trace context to api psr request
             $laravelTracer->injectContextToRequest($span->getContext(), $request);
 
             if ($span->getContext()->isSampled()) {
-                $span->tag(HTTP_HOST, $request->getUri()->getHost());
-                $span->tag(HTTP_PATH, $path);
-                $span->tag(HTTP_METHOD, $request->getMethod());
-                $span->tag(Tracer::HTTP_REQUEST_BODY, $request->getBody()->getContents());
+                $laravelTracer->addTag($span, HTTP_HOST, $request->getUri()->getHost());
+                $laravelTracer->addTag($span, HTTP_PATH, $path);
+                $laravelTracer->addTag($span, Tracer::HTTP_QUERY_STRING, (string)$request->getUri()->getQuery());
+                $laravelTracer->addTag($span, HTTP_METHOD, $request->getMethod());
+                $laravelTracer->addTag($span, Tracer::HTTP_REQUEST_BODY, $laravelTracer->formatHttpBody($request->getBody()->getContents(), $request->getBody()->getSize()));
                 $request->getBody()->seek(0);
-                $span->tag(Tracer::HTTP_REQUEST_HEADERS, json_encode($request->getHeaders(), JSON_UNESCAPED_UNICODE));
-                $span->tag(
+                $laravelTracer->addTag($span, Tracer::HTTP_REQUEST_HEADERS, json_encode($request->getHeaders(), JSON_UNESCAPED_UNICODE));
+                $laravelTracer->addTag(
+                    $span,
                     Tracer::HTTP_REQUEST_PROTOCOL_VERSION,
                     $laravelTracer->formatHttpProtocolVersion($request->getProtocolVersion())
                 );
-                $span->tag(Tracer::HTTP_REQUEST_SCHEME, $request->getUri()->getScheme());
+                $laravelTracer->addTag($span, Tracer::HTTP_REQUEST_SCHEME, $request->getUri()->getScheme());
             }
 
             $response = null;
@@ -59,11 +60,12 @@ class HttpClient extends GuzzleHttpClient
             } finally {
                 if ($response) {
                     if ($span->getContext()->isSampled()) {
-                        $span->tag(HTTP_STATUS_CODE, $response->getStatusCode());
-                        $span->tag(Tracer::HTTP_RESPONSE_BODY, $response->getBody()->getContents());
+                        $laravelTracer->addTag($span, HTTP_STATUS_CODE, $response->getStatusCode());
+                        $laravelTracer->addTag($span, Tracer::HTTP_RESPONSE_BODY, $laravelTracer->formatHttpBody($response->getBody()->getContents(), $response->getBody()->getSize()));
                         $response->getBody()->seek(0);
-                        $span->tag(Tracer::HTTP_RESPONSE_HEADERS, json_encode($response->getHeaders(), JSON_UNESCAPED_UNICODE));
-                        $span->tag(
+                        $laravelTracer->addTag($span, Tracer::HTTP_RESPONSE_HEADERS, json_encode($response->getHeaders(), JSON_UNESCAPED_UNICODE));
+                        $laravelTracer->addTag(
+                            $span,
                             Tracer::HTTP_RESPONSE_PROTOCOL_VERSION,
                             $laravelTracer->formatHttpProtocolVersion($response->getProtocolVersion())
                         );

@@ -12,7 +12,7 @@ use const Zipkin\Tags\HTTP_STATUS_CODE;
 
 /**
  * Class Middleware
- * @package Jing\Laravel\Zipkin
+ * @package Lxj\Laravel\Zipkin
  */
 class Middleware
 {
@@ -27,19 +27,21 @@ class Middleware
     public function handle($request, \Closure $next)
     {
         $laravelTracer = app(Tracer::class);
-        $path = $request->getRequestUri();
+        $path = $request->getPathInfo();
         return $laravelTracer->rootSpan('Server recv:' . $path, function (Span $span) use ($next, $request, $laravelTracer, $path) {
             if ($span->getContext()->isSampled()) {
-                $span->tag(HTTP_HOST, $request->getHttpHost());
-                $span->tag(HTTP_PATH, $path);
-                $span->tag(HTTP_METHOD, $request->getMethod());
-                $span->tag(Tracer::HTTP_REQUEST_BODY, is_string($request->getContent()) ? $request->getContent() : '');
-                $span->tag(Tracer::HTTP_REQUEST_HEADERS, json_encode($request->headers->all(), JSON_UNESCAPED_UNICODE));
-                $span->tag(
+                $laravelTracer->addTag($span, HTTP_HOST, $request->getHttpHost());
+                $laravelTracer->addTag($span, HTTP_PATH, $path);
+                $laravelTracer->addTag($span, Tracer::HTTP_QUERY_STRING, (string)$request->getQueryString());
+                $laravelTracer->addTag($span, HTTP_METHOD, $request->getMethod());
+                $laravelTracer->addTag($span, Tracer::HTTP_REQUEST_BODY, $laravelTracer->formatHttpBody($request->getContent()));
+                $laravelTracer->addTag($span, Tracer::HTTP_REQUEST_HEADERS, json_encode($request->headers->all(), JSON_UNESCAPED_UNICODE));
+                $laravelTracer->addTag(
+                    $span,
                     Tracer::HTTP_REQUEST_PROTOCOL_VERSION,
                     $laravelTracer->formatHttpProtocolVersion($request->getProtocolVersion())
                 );
-                $span->tag(Tracer::HTTP_REQUEST_SCHEME, $request->getScheme());
+                $laravelTracer->addTag($span, Tracer::HTTP_REQUEST_SCHEME, $request->getScheme());
             }
 
             /** @var Response $response */
@@ -49,9 +51,9 @@ class Middleware
 
                 if ($span->getContext()->isSampled()) {
                     if ($response->isServerError()) {
-                        $span->tag(ERROR, 'server error');
+                        $laravelTracer->addTag($span, ERROR, 'server error');
                     } elseif ($response->isClientError()) {
-                        $span->tag(ERROR, 'client error');
+                        $laravelTracer->addTag($span, ERROR, 'client error');
                     }
                 }
 
@@ -61,10 +63,11 @@ class Middleware
             } finally {
                 if ($response) {
                     if ($span->getContext()->isSampled()) {
-                        $span->tag(HTTP_STATUS_CODE, $response->getStatusCode());
-                        $span->tag(Tracer::HTTP_RESPONSE_BODY, $response->getContent());
-                        $span->tag(Tracer::HTTP_RESPONSE_HEADERS, json_encode($response->headers->all(), JSON_UNESCAPED_UNICODE));
-                        $span->tag(
+                        $laravelTracer->addTag($span, HTTP_STATUS_CODE, $response->getStatusCode());
+                        $laravelTracer->addTag($span, Tracer::HTTP_RESPONSE_BODY, $laravelTracer->formatHttpBody($response->getContent()));
+                        $laravelTracer->addTag($span, Tracer::HTTP_RESPONSE_HEADERS, json_encode($response->headers->all(), JSON_UNESCAPED_UNICODE));
+                        $laravelTracer->addTag(
+                            $span,
                             Tracer::HTTP_RESPONSE_PROTOCOL_VERSION,
                             $laravelTracer->formatHttpProtocolVersion($response->getProtocolVersion())
                         );

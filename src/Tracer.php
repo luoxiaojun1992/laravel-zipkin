@@ -19,7 +19,7 @@ use Zipkin\TracingBuilder;
 
 /**
  * Class Tracer
- * @package Jing\Laravel\Zipkin
+ * @package Lxj\Laravel\Zipkin
  */
 class Tracer
 {
@@ -37,10 +37,12 @@ class Tracer
     const DB_QUERY_TIMES = 'db.query.times';
     const DB_QUERY_TOTAL_DURATION = 'db.query.total.duration';
     const FRAMEWORK_VERSION = 'framework.version';
+    const HTTP_QUERY_STRING = 'http.query_string';
 
     private $serviceName;
     private $endpointUrl;
     private $sampleRate;
+    private $bodySize = 1000;
 
     /** @var \Zipkin\Tracer */
     private $tracer;
@@ -63,6 +65,7 @@ class Tracer
         $this->serviceName = config('zipkin.service_name', 'jstracking');
         $this->endpointUrl = config('zipkin.endpoint_url', 'http://localhost:9411/api/v2/spans');
         $this->sampleRate = config('zipkin.sample_rate', 0);
+        $this->bodySize = config('zipkin.body_size', 1000);
 
         $this->createTracer();
 
@@ -158,14 +161,14 @@ class Tracer
             return call_user_func_array($callback, ['span' => $span]);
         } catch (\Exception $e) {
             if ($span->getContext()->isSampled()) {
-                $span->tag(ERROR, $e->getMessage() . PHP_EOL . $e->getTraceAsString());
+                $this->addTag($span, ERROR, $e->getMessage() . PHP_EOL . $e->getTraceAsString());
             }
             throw $e;
         } finally {
             if ($span->getContext()->isSampled()) {
-                $span->tag(self::DB_QUERY_TIMES, $this->dbQueryTimes - $startDbQueryTimes);
-                $span->tag(self::DB_QUERY_TOTAL_DURATION, ($this->totalDbQueryDuration - $startDbQueryDuration) . 'ms');
-                $span->tag(static::RUNTIME_MEMORY, round((memory_get_usage() - $startMemory) / 1000000, 2) . 'MB');
+                $this->addTag($span, self::DB_QUERY_TIMES, $this->dbQueryTimes - $startDbQueryTimes);
+                $this->addTag($span, self::DB_QUERY_TOTAL_DURATION, ($this->totalDbQueryDuration - $startDbQueryDuration) . 'ms');
+                $this->addTag($span, static::RUNTIME_MEMORY, round((memory_get_usage() - $startMemory) / 1000000, 2) . 'MB');
                 $this->afterSpanTags($span);
             }
 
@@ -206,6 +209,57 @@ class Tracer
         }
 
         return strtoupper($protocolVersion);
+    }
+
+    /**
+     * Formatting http body
+     *
+     * @param $httpBody
+     * @param null $bodySize
+     * @return string
+     */
+    public function formatHttpBody($httpBody, $bodySize = null)
+    {
+        $httpBody = $this->convertToStr($httpBody);
+
+        if (is_null($bodySize)) {
+            $bodySize = strlen($httpBody);
+        }
+
+        if ($bodySize > $this->bodySize) {
+            $httpBody = mb_substr($httpBody, 0, $this->bodySize, 'utf8') . ' ...';
+        }
+
+        return $httpBody;
+    }
+
+    /**
+     * Add span tag
+     *
+     * @param Span $span
+     * @param $key
+     * @param $value
+     */
+    public function addTag($span, $key, $value)
+    {
+        $span->tag($key, $this->convertToStr($value));
+    }
+
+    /**
+     * Convert variable to string
+     *
+     * @param $value
+     * @return string
+     */
+    private function convertToStr($value)
+    {
+        if (!is_scalar($value)) {
+            $value = '';
+        } else {
+            $value = (string)$value;
+        }
+
+        return $value;
     }
 
     /**
@@ -311,7 +365,7 @@ class Tracer
         foreach ($startSystemLoad as $k => $v) {
             $startSystemLoad[$k] = round($v, 2);
         }
-        $span->tag(static::RUNTIME_START_SYSTEM_LOAD, implode(',', $startSystemLoad));
+        $this->addTag($span, static::RUNTIME_START_SYSTEM_LOAD, implode(',', $startSystemLoad));
     }
 
     /**
@@ -323,7 +377,7 @@ class Tracer
         foreach ($finishSystemLoad as $k => $v) {
             $finishSystemLoad[$k] = round($v, 2);
         }
-        $span->tag(static::RUNTIME_FINISH_SYSTEM_LOAD, implode(',', $finishSystemLoad));
+        $this->addTag($span, static::RUNTIME_FINISH_SYSTEM_LOAD, implode(',', $finishSystemLoad));
     }
 
     /**
@@ -331,8 +385,8 @@ class Tracer
      */
     private function beforeSpanTags($span)
     {
-        $span->tag(self::FRAMEWORK_VERSION, 'Laravel-' . app()->version());
-        $span->tag(self::RUNTIME_PHP_VERSION, PHP_VERSION);
+        $this->addTag($span, self::FRAMEWORK_VERSION, 'Laravel-' . app()->version());
+        $this->addTag($span, self::RUNTIME_PHP_VERSION, PHP_VERSION);
 
         $this->startSysLoadTag($span);
     }
