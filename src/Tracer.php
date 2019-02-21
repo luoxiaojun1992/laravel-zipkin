@@ -39,10 +39,10 @@ class Tracer
     const FRAMEWORK_VERSION = 'framework.version';
     const HTTP_QUERY_STRING = 'http.query_string';
 
-    private $serviceName;
-    private $endpointUrl;
-    private $sampleRate;
-    private $bodySize = 1000;
+    private $serviceName = 'jstracking';
+    private $endpointUrl = 'http://localhost:9411/api/v2/spans';
+    private $sampleRate = 0;
+    private $bodySize = 5000;
 
     /** @var \Zipkin\Tracer */
     private $tracer;
@@ -65,7 +65,7 @@ class Tracer
         $this->serviceName = config('zipkin.service_name', 'jstracking');
         $this->endpointUrl = config('zipkin.endpoint_url', 'http://localhost:9411/api/v2/spans');
         $this->sampleRate = config('zipkin.sample_rate', 0);
-        $this->bodySize = config('zipkin.body_size', 1000);
+        $this->bodySize = config('zipkin.body_size', 5000);
 
         $this->createTracer();
 
