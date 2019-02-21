@@ -39,7 +39,7 @@ class Tracer
     const FRAMEWORK_VERSION = 'framework.version';
     const HTTP_QUERY_STRING = 'http.query_string';
 
-    private $serviceName = 'jstracking';
+    private $serviceName = 'laravel-zipkin';
     private $endpointUrl = 'http://localhost:9411/api/v2/spans';
     private $sampleRate = 0;
     private $bodySize = 5000;
@@ -62,7 +62,7 @@ class Tracer
      */
     public function __construct()
     {
-        $this->serviceName = config('zipkin.service_name', 'jstracking');
+        $this->serviceName = config('zipkin.service_name', 'laravel-zipkin');
         $this->endpointUrl = config('zipkin.endpoint_url', 'http://localhost:9411/api/v2/spans');
         $this->sampleRate = config('zipkin.sample_rate', 0);
         $this->bodySize = config('zipkin.body_size', 5000);
