@@ -54,8 +54,8 @@ class Tracer
     private $rootContext;
 
     //DB metrics
-    private $dbQueryTimes = 0;
-    private $totalDbQueryDuration = 0;
+    private $dbQueryTimes = [];
+    private $totalDbQueryDuration = [];
 
     /**
      * Tracer constructor.
@@ -98,8 +98,17 @@ class Tracer
     private function listenDbQuery()
     {
         \Event::listen(QueryExecuted::class, function (QueryExecuted $event) {
-            $this->dbQueryTimes++;
-            $this->totalDbQueryDuration += $event->time;
+            $identify = $event->connection->getDriverName() . '.' . $event->connectionName;
+            if (isset($this->dbQueryTimes[$identify])) {
+                $this->dbQueryTimes[$identify]++;
+            } else {
+                $this->dbQueryTimes[$identify] = 1;
+            }
+            if (isset($this->totalDbQueryDuration[$identify])) {
+                $this->totalDbQueryDuration[$identify] += $event->time;
+            } else {
+                $this->totalDbQueryDuration[$identify] = $event->time;
+            }
         });
     }
 
@@ -166,8 +175,12 @@ class Tracer
             throw $e;
         } finally {
             if ($span->getContext()->isSampled()) {
-                $this->addTag($span, self::DB_QUERY_TIMES, $this->dbQueryTimes - $startDbQueryTimes);
-                $this->addTag($span, self::DB_QUERY_TOTAL_DURATION, ($this->totalDbQueryDuration - $startDbQueryDuration) . 'ms');
+                foreach ($this->dbQueryTimes as $identify => $value) {
+                    $this->addTag($span, self::DB_QUERY_TIMES . '.' . $identify, $value - (isset($startDbQueryTimes[$identify]) ? $startDbQueryTimes[$identify] : 0));
+                }
+                foreach ($this->totalDbQueryDuration as $identify => $value) {
+                    $this->addTag($span, self::DB_QUERY_TOTAL_DURATION . '.' . $identify, ($value - (isset($startDbQueryDuration[$identify]) ? $startDbQueryDuration[$identify] : 0)) . 'ms');
+                }
                 $this->addTag($span, static::RUNTIME_MEMORY, round((memory_get_usage() - $startMemory) / 1000000, 2) . 'MB');
                 $this->afterSpanTags($span);
             }
