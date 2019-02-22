@@ -3,9 +3,9 @@
 namespace Lxj\Laravel\Zipkin;
 
 use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Psr\Http\Message\RequestInterface;
-use Symfony\Bridge\PsrHttpMessage\Factory\DiactorosFactory;
 use Zipkin\Endpoint;
 use Zipkin\Propagation\DefaultSamplingFlags;
 use Zipkin\Propagation\RequestHeaders;
@@ -288,14 +288,14 @@ class Tracer
     }
 
     /**
-     * Extract trace context from http psr request
+     * Extract trace context from laravel request
      *
-     * @param RequestInterface $request
+     * @param Request $request
      * @return TraceContext|DefaultSamplingFlags
      */
     public function extractRequestToContext($request)
     {
-        $extractor = $this->getTracing()->getPropagation()->getExtractor(new RequestHeaders());
+        $extractor = $this->getTracing()->getPropagation()->getExtractor(new LaravelRequestHeaders());
         return $extractor($request);
     }
 
@@ -309,11 +309,8 @@ class Tracer
             $parentContext = $this->rootContext;
         } else {
             if (!\App::runningInConsole()) {
-                //Convert symfony request to psr request
-                $psrRequest = (new DiactorosFactory())->createRequest(request());
-
-                //Extract trace context from http psr request
-                $parentContext = $this->extractRequestToContext($psrRequest);
+                //Extract trace context from laravel request
+                $parentContext = $this->extractRequestToContext(request());
             }
         }
 
