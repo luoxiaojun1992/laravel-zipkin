@@ -28,6 +28,6 @@ final class LaravelRequestHeaders implements Getter, Setter
     public function put(&$carrier, $key, $value)
     {
         $lKey = strtolower($key);
-        $carrier = $carrier->headers->set($lKey, $value);
+        $carrier = $carrier->headers->set($lKey, $value, false);
     }
 }
