@@ -82,13 +82,12 @@ class Tracer
         $endpoint = Endpoint::createFromGlobals()->withServiceName($this->serviceName);
         $sampler = BinarySampler::createAsAlwaysSample();
         $reporter = new Http(null, ['endpoint_url' => $this->endpointUrl]);
-        $tracing = TracingBuilder::create()
+
+        $this->tracing = TracingBuilder::create()
             ->havingLocalEndpoint($endpoint)
             ->havingSampler($sampler)
             ->havingReporter($reporter)
-            ->build();
-
-        $this->tracing = $tracing;
+            ->build();;
         $this->tracer = $this->getTracing()->getTracer();
     }
 
