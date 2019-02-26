@@ -43,6 +43,7 @@ class Tracer
     private $endpointUrl = 'http://localhost:9411/api/v2/spans';
     private $sampleRate = 0;
     private $bodySize = 5000;
+    private $curlTimeout = 1;
 
     /** @var \Zipkin\Tracer */
     private $tracer;
@@ -66,6 +67,7 @@ class Tracer
         $this->endpointUrl = config('zipkin.endpoint_url', 'http://localhost:9411/api/v2/spans');
         $this->sampleRate = config('zipkin.sample_rate', 0);
         $this->bodySize = config('zipkin.body_size', 5000);
+        $this->curlTimeout = config('zipkin.curl_timeout', 1);
 
         $this->createTracer();
 
@@ -81,7 +83,7 @@ class Tracer
     {
         $endpoint = Endpoint::createFromGlobals()->withServiceName($this->serviceName);
         $sampler = BinarySampler::createAsAlwaysSample();
-        $reporter = new Http(null, ['endpoint_url' => $this->endpointUrl]);
+        $reporter = new Http(null, ['endpoint_url' => $this->endpointUrl, 'timeout' => $this->curlTimeout]);
 
         $this->tracing = TracingBuilder::create()
             ->havingLocalEndpoint($endpoint)
