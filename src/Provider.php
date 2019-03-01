@@ -12,5 +12,7 @@ class Provider extends ServiceProvider
     public function boot()
     {
         $this->publishes([__DIR__ . '/config/zipkin.php' => config_path('zipkin.php')], 'config');
+
+        $this->commands(ZipkinReporter::class);
     }
 }
