@@ -28,7 +28,7 @@ class Middleware
     {
         $laravelTracer = app(Tracer::class);
         $path = $request->getPathInfo();
-        return $laravelTracer->rootSpan('Server recv:' . $path, function (Span $span) use ($next, $request, $laravelTracer, $path) {
+        return $laravelTracer->rootSpan($path, function (Span $span) use ($next, $request, $laravelTracer, $path) {
             if ($span->getContext()->isSampled()) {
                 $laravelTracer->addTag($span, HTTP_HOST, $request->getHttpHost());
                 $laravelTracer->addTag($span, HTTP_PATH, $path);
@@ -61,6 +61,7 @@ class Middleware
             } catch (\Exception $e) {
                 throw $e;
             } finally {
+                $span->setName($request->route()->uri());
                 if ($response) {
                     if ($span->getContext()->isSampled()) {
                         $laravelTracer->addTag($span, HTTP_STATUS_CODE, $response->getStatusCode());

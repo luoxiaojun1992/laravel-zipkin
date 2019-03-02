@@ -22,56 +22,59 @@ class HttpClient extends GuzzleHttpClient
      *
      * @param RequestInterface $request
      * @param array $options
+     * @param string $spanName
      * @return mixed|\Psr\Http\Message\ResponseInterface|null
      * @throws \Exception
      */
-    public function send(RequestInterface $request, array $options = [])
+    public function send(RequestInterface $request, array $options = [], $spanName = null)
     {
         $laravelTracer = app(Tracer::class);
         $path = $request->getUri()->getPath();
 
-        return $laravelTracer->span('Call api:' . $path, function (Span $span) use ($request, $options, $laravelTracer, $path) {
-            //Inject trace context to api psr request
-            $laravelTracer->injectContextToRequest($span->getContext(), $request);
+        return $laravelTracer->span(
+            isset($spanName) ? $spanName : $laravelTracer->formatHttpPath($path),
+            function (Span $span) use ($request, $options, $laravelTracer, $path) {
+                //Inject trace context to api psr request
+                $laravelTracer->injectContextToRequest($span->getContext(), $request);
 
-            if ($span->getContext()->isSampled()) {
-                $laravelTracer->addTag($span, HTTP_HOST, $request->getUri()->getHost());
-                $laravelTracer->addTag($span, HTTP_PATH, $path);
-                $laravelTracer->addTag($span, Tracer::HTTP_QUERY_STRING, (string)$request->getUri()->getQuery());
-                $laravelTracer->addTag($span, HTTP_METHOD, $request->getMethod());
-                $laravelTracer->addTag($span, Tracer::HTTP_REQUEST_BODY, $laravelTracer->formatHttpBody($request->getBody()->getContents(), $request->getBody()->getSize()));
-                $request->getBody()->seek(0);
-                $laravelTracer->addTag($span, Tracer::HTTP_REQUEST_HEADERS, json_encode($request->getHeaders(), JSON_UNESCAPED_UNICODE));
-                $laravelTracer->addTag(
-                    $span,
-                    Tracer::HTTP_REQUEST_PROTOCOL_VERSION,
-                    $laravelTracer->formatHttpProtocolVersion($request->getProtocolVersion())
-                );
-                $laravelTracer->addTag($span, Tracer::HTTP_REQUEST_SCHEME, $request->getUri()->getScheme());
-            }
+                if ($span->getContext()->isSampled()) {
+                    $laravelTracer->addTag($span, HTTP_HOST, $request->getUri()->getHost());
+                    $laravelTracer->addTag($span, HTTP_PATH, $path);
+                    $laravelTracer->addTag($span, Tracer::HTTP_QUERY_STRING, (string)$request->getUri()->getQuery());
+                    $laravelTracer->addTag($span, HTTP_METHOD, $request->getMethod());
+                    $laravelTracer->addTag($span, Tracer::HTTP_REQUEST_BODY, $laravelTracer->formatHttpBody($request->getBody()->getContents(), $request->getBody()->getSize()));
+                    $request->getBody()->seek(0);
+                    $laravelTracer->addTag($span, Tracer::HTTP_REQUEST_HEADERS, json_encode($request->getHeaders(), JSON_UNESCAPED_UNICODE));
+                    $laravelTracer->addTag(
+                        $span,
+                        Tracer::HTTP_REQUEST_PROTOCOL_VERSION,
+                        $laravelTracer->formatHttpProtocolVersion($request->getProtocolVersion())
+                    );
+                    $laravelTracer->addTag($span, Tracer::HTTP_REQUEST_SCHEME, $request->getUri()->getScheme());
+                }
 
-            $response = null;
-            try {
-                $response = parent::send($request, $options);
-                return $response;
-            } catch (\Exception $e) {
-                Log::error('CURL ERROR ' . $e->getMessage());
-                throw new \Exception('CURL ERROR ' . $e->getMessage());
-            } finally {
-                if ($response) {
-                    if ($span->getContext()->isSampled()) {
-                        $laravelTracer->addTag($span, HTTP_STATUS_CODE, $response->getStatusCode());
-                        $laravelTracer->addTag($span, Tracer::HTTP_RESPONSE_BODY, $laravelTracer->formatHttpBody($response->getBody()->getContents(), $response->getBody()->getSize()));
-                        $response->getBody()->seek(0);
-                        $laravelTracer->addTag($span, Tracer::HTTP_RESPONSE_HEADERS, json_encode($response->getHeaders(), JSON_UNESCAPED_UNICODE));
-                        $laravelTracer->addTag(
-                            $span,
-                            Tracer::HTTP_RESPONSE_PROTOCOL_VERSION,
-                            $laravelTracer->formatHttpProtocolVersion($response->getProtocolVersion())
-                        );
+                $response = null;
+                try {
+                    $response = parent::send($request, $options);
+                    return $response;
+                } catch (\Exception $e) {
+                    Log::error('CURL ERROR ' . $e->getMessage());
+                    throw new \Exception('CURL ERROR ' . $e->getMessage());
+                } finally {
+                    if ($response) {
+                        if ($span->getContext()->isSampled()) {
+                            $laravelTracer->addTag($span, HTTP_STATUS_CODE, $response->getStatusCode());
+                            $laravelTracer->addTag($span, Tracer::HTTP_RESPONSE_BODY, $laravelTracer->formatHttpBody($response->getBody()->getContents(), $response->getBody()->getSize()));
+                            $response->getBody()->seek(0);
+                            $laravelTracer->addTag($span, Tracer::HTTP_RESPONSE_HEADERS, json_encode($response->getHeaders(), JSON_UNESCAPED_UNICODE));
+                            $laravelTracer->addTag(
+                                $span,
+                                Tracer::HTTP_RESPONSE_PROTOCOL_VERSION,
+                                $laravelTracer->formatHttpProtocolVersion($response->getProtocolVersion())
+                            );
+                        }
                     }
                 }
-            }
-        }, null, \Zipkin\Kind\CLIENT);
+            }, null, \Zipkin\Kind\CLIENT);
     }
 }
