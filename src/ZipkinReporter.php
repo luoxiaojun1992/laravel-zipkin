@@ -183,7 +183,7 @@ class ZipkinReporter extends Command
             $span['tag_http_status_code'] = intval($span['tag_http_status_code']);
         }
         if (isset($span['tag_runtime_memory'])) {
-            $runtimeMemory = substr('0.02MB', 0, -2);
+            $runtimeMemory = substr($span['tag_runtime_memory'], 0, -2);
             $span['tag_runtime_memory_float'] = doubleval($runtimeMemory);
         }
 
