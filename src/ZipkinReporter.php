@@ -173,11 +173,22 @@ class ZipkinReporter extends Command
             $formattedTags = [];
             $tags = $span['tags'];
             unset($span['tags']);
+            $dbQueryTimes = 0;
+            $dbQueryDuration = 0;
             foreach ($tags as $key => $value) {
                 $formattedKey = 'tag_' . str_replace('.', '_', $key);
                 $formattedTags[$formattedKey] = $value;
+
+                if (strpos($formattedKey, 'tag_db_query_times_') === 0) {
+                    $dbQueryTimes += intval($value);
+                }
+                if (strpos($formattedKey, 'tag_db_query_total_duration_') === 0) {
+                    $dbQueryDuration += doubleval(substr($value, 0, -2));
+                }
             }
             $span = array_merge($span, $formattedTags);
+            $span['tag_db_query_times'] = $dbQueryTimes;
+            $span['tag_db_query_total_duration'] = $dbQueryDuration;
         }
 
         if (isset($span['tag_http_status_code'])) {
