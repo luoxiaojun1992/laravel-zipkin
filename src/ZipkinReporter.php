@@ -167,6 +167,8 @@ class ZipkinReporter extends Command
         $createdAt = date('c', $createdTime);
         $span['created_at'] = $createdAt;
 
+        $span['is_success'] = !isset($span['tags']['error']);
+
         if (isset($span['tags'])) {
             $formattedTags = [];
             $tags = $span['tags'];
@@ -178,7 +180,6 @@ class ZipkinReporter extends Command
             $span = array_merge($span, $formattedTags);
         }
 
-        $span['is_success'] = !isset($span['tags']['error']);
         if (isset($span['tag_http_status_code'])) {
             $span['tag_http_status_code'] = intval($span['tag_http_status_code']);
         }
