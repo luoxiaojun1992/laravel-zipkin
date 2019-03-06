@@ -209,7 +209,9 @@ class ZipkinReporter extends Command
             if (!json_last_error()) {
                 foreach ($requestHeaders as $headerName => $headerValues) {
                     if (strtolower($headerName) === 'content-type') {
-                        $span['tag_http_request_content_type'] = implode(',', $headerValues);
+                        if (isset($headerValues[0])) {
+                            $span['tag_http_request_content_type'] = $headerValues[0];
+                        }
                         break;
                     }
                 }
@@ -220,7 +222,9 @@ class ZipkinReporter extends Command
             if (!json_last_error()) {
                 foreach ($responseHeaders as $headerName => $headerValues) {
                     if (strtolower($headerName) === 'content-type') {
-                        $span['tag_http_response_content_type'] = implode(',', $headerValues);
+                        if (isset($headerValues[0])) {
+                            $span['tag_http_response_content_type'] = $headerValues[0];
+                        }
                         break;
                     }
                 }
