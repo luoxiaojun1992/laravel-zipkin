@@ -74,7 +74,7 @@ class ZipkinReporter extends Command
             null,
             InputOption::VALUE_OPTIONAL,
             'Report frequency(int)',
-            100
+            100 //Local test: 5000 ok，if curl timeout，increase curl timeout config or number of consumer
         );
     }
 
