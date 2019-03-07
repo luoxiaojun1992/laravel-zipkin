@@ -24,10 +24,12 @@ use Zipkin\TracingBuilder;
 class Tracer
 {
     const HTTP_REQUEST_BODY = 'http.request.body';
+    const HTTP_REQUEST_BODY_SIZE = 'http.request.body.size';
     const HTTP_REQUEST_HEADERS = 'http.request.headers';
     const HTTP_REQUEST_PROTOCOL_VERSION = 'http.request.protocol.version';
     const HTTP_REQUEST_SCHEME = 'http.request.scheme';
     const HTTP_RESPONSE_BODY = 'http.response.body';
+    const HTTP_RESPONSE_BODY_SIZE = 'http.response.body.size';
     const HTTP_RESPONSE_HEADERS = 'http.response.headers';
     const HTTP_RESPONSE_PROTOCOL_VERSION = 'http.response.protocol.version';
     const RUNTIME_START_SYSTEM_LOAD = 'runtime.start_system_load';
@@ -295,7 +297,7 @@ class Tracer
      * @param $value
      * @return string
      */
-    private function convertToStr($value)
+    public function convertToStr($value)
     {
         if (!is_scalar($value)) {
             $value = '';

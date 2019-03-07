@@ -194,15 +194,15 @@ class ZipkinReporter extends Command
         if (isset($span['tag_http_status_code'])) {
             $span['tag_http_status_code'] = intval($span['tag_http_status_code']);
         }
+        if (isset($span['tag_http_request_body_size'])) {
+            $span['tag_http_request_body_size'] = intval($span['tag_http_request_body_size']);
+        }
+        if (isset($span['tag_http_response_body_size'])) {
+            $span['tag_http_response_body_size'] = intval($span['tag_http_response_body_size']);
+        }
         if (isset($span['tag_runtime_memory'])) {
             $runtimeMemory = substr($span['tag_runtime_memory'], 0, -2);
             $span['tag_runtime_memory_float'] = doubleval($runtimeMemory);
-        }
-        if (isset($span['tag_http_request_body'])) {
-            $span['tag_http_request_body_size'] = strlen($span['tag_http_request_body']);
-        }
-        if (isset($span['tag_http_response_body'])) {
-            $span['tag_http_response_body_size'] = strlen($span['tag_http_response_body']);
         }
         if (isset($span['tag_http_request_headers'])) {
             $requestHeaders = json_decode($span['tag_http_request_headers'], true);

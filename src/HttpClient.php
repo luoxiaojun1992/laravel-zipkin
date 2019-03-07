@@ -42,7 +42,9 @@ class HttpClient extends GuzzleHttpClient
                     $laravelTracer->addTag($span, HTTP_PATH, $path);
                     $laravelTracer->addTag($span, Tracer::HTTP_QUERY_STRING, (string)$request->getUri()->getQuery());
                     $laravelTracer->addTag($span, HTTP_METHOD, $request->getMethod());
-                    $laravelTracer->addTag($span, Tracer::HTTP_REQUEST_BODY, $laravelTracer->formatHttpBody($request->getBody()->getContents(), $request->getBody()->getSize()));
+                    $httpRequestBodyLen = $request->getBody()->getSize();
+                    $laravelTracer->addTag($span, Tracer::HTTP_REQUEST_BODY_SIZE, $httpRequestBodyLen);
+                    $laravelTracer->addTag($span, Tracer::HTTP_REQUEST_BODY, $laravelTracer->formatHttpBody($request->getBody()->getContents(), $httpRequestBodyLen));
                     $request->getBody()->seek(0);
                     $laravelTracer->addTag($span, Tracer::HTTP_REQUEST_HEADERS, json_encode($request->getHeaders(), JSON_UNESCAPED_UNICODE));
                     $laravelTracer->addTag(
@@ -64,7 +66,9 @@ class HttpClient extends GuzzleHttpClient
                     if ($response) {
                         if ($span->getContext()->isSampled()) {
                             $laravelTracer->addTag($span, HTTP_STATUS_CODE, $response->getStatusCode());
-                            $laravelTracer->addTag($span, Tracer::HTTP_RESPONSE_BODY, $laravelTracer->formatHttpBody($response->getBody()->getContents(), $response->getBody()->getSize()));
+                            $httpResponseBodyLen = $response->getBody()->getSize();
+                            $laravelTracer->addTag($span, Tracer::HTTP_RESPONSE_BODY_SIZE, $httpResponseBodyLen);
+                            $laravelTracer->addTag($span, Tracer::HTTP_RESPONSE_BODY, $laravelTracer->formatHttpBody($response->getBody()->getContents(), $httpResponseBodyLen));
                             $response->getBody()->seek(0);
                             $laravelTracer->addTag($span, Tracer::HTTP_RESPONSE_HEADERS, json_encode($response->getHeaders(), JSON_UNESCAPED_UNICODE));
                             $laravelTracer->addTag(
