@@ -82,7 +82,9 @@ class Tracer
 
         $this->listenDbQuery();
 
-        app()->singleton(static::class, $this);
+        app()->singleton(static::class, function () {
+            return $this;
+        });
     }
 
     /**
