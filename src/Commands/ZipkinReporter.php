@@ -1,6 +1,6 @@
 <?php
 
-namespace Lxj\Laravel\Zipkin;
+namespace Lxj\Laravel\Zipkin\Commands;
 
 use Elasticsearch;
 use Illuminate\Console\Command;
