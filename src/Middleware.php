@@ -26,9 +26,10 @@ class Middleware
      */
     public function handle($request, \Closure $next)
     {
+        /** @var Tracer $laravelTracer */
         $laravelTracer = app(Tracer::class);
         $path = $request->getPathInfo();
-        return $laravelTracer->rootSpan($path, function (Span $span) use ($next, $request, $laravelTracer, $path) {
+        return $laravelTracer->rootSpan($laravelTracer->formatHttpPath($path), function (Span $span) use ($next, $request, $laravelTracer, $path) {
             if ($span->getContext()->isSampled()) {
                 $laravelTracer->addTag($span, HTTP_HOST, $request->getHttpHost());
                 $laravelTracer->addTag($span, HTTP_PATH, $path);
