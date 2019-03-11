@@ -3,6 +3,7 @@
 namespace Lxj\Laravel\Zipkin;
 
 use Illuminate\Http\Response;
+use Illuminate\Routing\Route;
 use Zipkin\Span;
 use const Zipkin\Tags\ERROR;
 use const Zipkin\Tags\HTTP_HOST;
@@ -68,7 +69,12 @@ class Middleware
             } catch (\Exception $e) {
                 throw $e;
             } finally {
-                $span->setName($request->route()->uri());
+                $route = $request->route();
+                if ($route instanceof Route) {
+                    $span->setName($request->route()->uri());
+                } elseif (is_string($route)) {
+                    $span->setName($route);
+                }
                 if ($response) {
                     if ($span->getContext()->isSampled()) {
                         $laravelTracer->addTag($span, HTTP_STATUS_CODE, $response->getStatusCode());
