@@ -9,6 +9,15 @@ use Lxj\Laravel\Zipkin\Commands\ZipkinReporter;
 
 class Provider extends ServiceProvider
 {
+    public function register()
+    {
+        parent::register();
+
+        $this->app->singleton(Tracer::class, function(){
+            return new Tracer(config('zipkin'));
+        });
+    }
+
     /**
      * Bootstrap the application services.
      */

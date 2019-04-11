@@ -9,6 +9,10 @@
         "guzzlehttp/guzzle": "^6.3",
         "cviebrock/laravel-elasticsearch": "~3.4"
     },
+    "require-dev": {
+        "phpunit/phpunit": "~8.1",
+        "mockery/mockery": "~1.2"
+    },
     "license": "apache-2.0",
     "authors": [
         {

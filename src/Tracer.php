@@ -67,24 +67,22 @@ class Tracer
 
     /**
      * Tracer constructor.
+     * @param $config
      */
-    public function __construct()
+    public function __construct($config)
     {
-        $this->serviceName = config('zipkin.service_name', 'laravel-zipkin');
-        $this->endpointUrl = config('zipkin.endpoint_url', 'http://localhost:9411/api/v2/spans');
-        $this->sampleRate = config('zipkin.sample_rate', 0);
-        $this->bodySize = config('zipkin.body_size', 5000);
-        $this->curlTimeout = config('zipkin.curl_timeout', 1);
-        $this->redisOptions = array_merge($this->redisOptions, config('zipkin.redis_options', []));
-        $this->reportType = config('zipkin.report_type', 'http');
+        $this->serviceName = isset($config['service_name']) ? $config['service_name'] : 'laravel-zipkin';
+        $this->endpointUrl = isset($config['endpoint_url']) ? $config['endpoint_url'] : 'http://localhost:9411/api/v2/spans';
+        $this->sampleRate = isset($config['sample_rate']) ? $config['sample_rate'] : 0;
+        $this->bodySize = isset($config['body_size']) ? $config['body_size'] : 5000;
+        $this->curlTimeout = isset($config['curl_timeout']) ? $config['curl_timeout'] : 1;
+        $redisOptions = isset($config['redis_options']) ? $config['redis_options'] : [];
+        $this->redisOptions = array_merge($this->redisOptions, $redisOptions);
+        $this->reportType = isset($config['report_type']) ? $config['report_type'] : 'http';
 
         $this->createTracer();
 
         $this->listenDbQuery();
-
-        app()->singleton(static::class, function () {
-            return $this;
-        });
     }
 
     /**
@@ -345,7 +343,7 @@ class Tracer
         } else {
             if (!\App::runningInConsole()) {
                 //Extract trace context from laravel request
-                $parentContext = $this->extractRequestToContext(request());
+                $parentContext = $this->extractRequestToContext(\Illuminate\Support\Facades\Request::instance());
             }
         }
 
@@ -440,7 +438,7 @@ class Tracer
      */
     private function beforeSpanTags($span)
     {
-        $this->addTag($span, self::FRAMEWORK_VERSION, 'Laravel-' . app()->version());
+        $this->addTag($span, self::FRAMEWORK_VERSION, 'Laravel-' . \App::version());
         $this->addTag($span, self::RUNTIME_PHP_VERSION, PHP_VERSION);
 
         $this->startSysLoadTag($span);
