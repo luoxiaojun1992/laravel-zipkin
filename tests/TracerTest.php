@@ -28,7 +28,7 @@ class TracerTest extends \PHPUnit\Framework\TestCase
             ->andReturn('5.5.44');
 
         //Mock Request
-        $request = M::mock('alias:\\Illuminate\\Http\\Request');
+        $request = M::mock('\\Illuminate\\Http\\Request');
         $request->shouldReceive('hasHeader')->with('x-b3-sampled')
             ->andReturnFalse();
         $request->shouldReceive('hasHeader')->with('x-b3-flags')
