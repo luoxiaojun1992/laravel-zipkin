@@ -10,7 +10,7 @@
         "cviebrock/laravel-elasticsearch": "~3.4"
     },
     "require-dev": {
-        "phpunit/phpunit": "~8.1",
+        "phpunit/phpunit": "~7.5",
         "mockery/mockery": "~1.2"
     },
     "license": "apache-2.0",
