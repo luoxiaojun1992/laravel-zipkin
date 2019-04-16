@@ -20,6 +20,10 @@ class TracerTest extends \PHPUnit\Framework\TestCase
             'Illuminate\\Database\\Events\\QueryExecuted',
             M::type('\\Closure')
         );
+        $event->shouldReceive('listen')->with(
+            'Illuminate\\Redis\\Events\\CommandExecuted',
+            M::type('\\Closure')
+        );
 
         //Mock App
         $app = M::mock('alias:\\App');
@@ -71,6 +75,10 @@ class TracerTest extends \PHPUnit\Framework\TestCase
         $event = M::mock('alias:\\Event');
         $event->shouldReceive('listen')->with(
             'Illuminate\\Database\\Events\\QueryExecuted',
+            M::type('\\Closure')
+        );
+        $event->shouldReceive('listen')->with(
+            'Illuminate\\Redis\\Events\\CommandExecuted',
             M::type('\\Closure')
         );
 

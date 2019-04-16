@@ -4,6 +4,7 @@ namespace Lxj\Laravel\Zipkin;
 
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Http\Request;
+use Illuminate\Redis\Events\CommandExecuted;
 use Illuminate\Support\Facades\Log;
 use Psr\Http\Message\RequestInterface;
 use Zipkin\Endpoint;
@@ -38,6 +39,8 @@ class Tracer
     const RUNTIME_PHP_VERSION = 'runtime.php.version';
     const DB_QUERY_TIMES = 'db.query.times';
     const DB_QUERY_TOTAL_DURATION = 'db.query.total.duration';
+    const REDIS_EXEC_TIMES = 'redis.exec.times';
+    const REDIS_EXEC_TOTAL_DURATION = 'redis.exec.total.duration';
     const FRAMEWORK_VERSION = 'framework.version';
     const HTTP_QUERY_STRING = 'http.query_string';
 
@@ -65,6 +68,10 @@ class Tracer
     private $dbQueryTimes = [];
     private $totalDbQueryDuration = [];
 
+    //Redis metrics
+    private $redisExecTimes = [];
+    private $totalRedisExecDuration = [];
+
     /**
      * Tracer constructor.
      * @param $config
@@ -83,6 +90,8 @@ class Tracer
         $this->createTracer();
 
         $this->listenDbQuery();
+
+        $this->listenRedisQuery();
     }
 
     /**
@@ -127,6 +136,26 @@ class Tracer
                 $this->totalDbQueryDuration[$identify] += $event->time;
             } else {
                 $this->totalDbQueryDuration[$identify] = $event->time;
+            }
+        });
+    }
+
+    /**
+     * Listen redis query event
+     */
+    private function listenRedisQuery()
+    {
+        \Event::listen(CommandExecuted::class, function (CommandExecuted $event) {
+            $identify = $event->connectionName;
+            if (isset($this->redisExecTimes[$identify])) {
+                $this->redisExecTimes[$identify]++;
+            } else {
+                $this->redisExecTimes[$identify] = 1;
+            }
+            if (isset($this->totalRedisExecDuration[$identify])) {
+                $this->totalRedisExecDuration[$identify] += $event->time;
+            } else {
+                $this->totalRedisExecDuration[$identify] = $event->time;
             }
         });
     }
@@ -179,6 +208,8 @@ class Tracer
 
         $startDbQueryTimes = $this->dbQueryTimes;
         $startDbQueryDuration = $this->totalDbQueryDuration;
+        $startRedisExecTimes = $this->redisExecTimes;
+        $startRedisExecDuration = $this->totalRedisExecDuration;
         $startMemory = 0;
         if ($span->getContext()->isSampled()) {
             $startMemory = memory_get_usage();
@@ -199,6 +230,12 @@ class Tracer
                 }
                 foreach ($this->totalDbQueryDuration as $identify => $value) {
                     $this->addTag($span, self::DB_QUERY_TOTAL_DURATION . '.' . $identify, ($value - (isset($startDbQueryDuration[$identify]) ? $startDbQueryDuration[$identify] : 0)) . 'ms');
+                }
+                foreach ($this->redisExecTimes as $identify => $value) {
+                    $this->addTag($span, self::REDIS_EXEC_TIMES . '.' . $identify, $value - (isset($startRedisExecTimes[$identify]) ? $startRedisExecTimes[$identify] : 0));
+                }
+                foreach ($this->totalRedisExecDuration as $identify => $value) {
+                    $this->addTag($span, self::REDIS_EXEC_TOTAL_DURATION . '.' . $identify, ($value - (isset($startRedisExecDuration[$identify]) ? $startRedisExecDuration[$identify] : 0)) . 'ms');
                 }
                 $this->addTag($span, static::RUNTIME_MEMORY, round((memory_get_usage() - $startMemory) / 1000000, 2) . 'MB');
                 $this->afterSpanTags($span);
