@@ -23,19 +23,22 @@ class HttpClient extends GuzzleHttpClient
      * @param RequestInterface $request
      * @param array $options
      * @param string $spanName
+     * @param bool $injectSpanCtx
      * @return mixed|\Psr\Http\Message\ResponseInterface|null
      * @throws \Exception
      */
-    public function send(RequestInterface $request, array $options = [], $spanName = null)
+    public function send(RequestInterface $request, array $options = [], $spanName = null, $injectSpanCtx = true)
     {
         $laravelTracer = app(Tracer::class);
         $path = $request->getUri()->getPath();
 
         return $laravelTracer->span(
             isset($spanName) ? $spanName : $laravelTracer->formatHttpPath($path),
-            function (Span $span) use ($request, $options, $laravelTracer, $path) {
+            function (Span $span) use ($request, $options, $laravelTracer, $path, $injectSpanCtx) {
                 //Inject trace context to api psr request
-                $laravelTracer->injectContextToRequest($span->getContext(), $request);
+                if ($injectSpanCtx) {
+                    $laravelTracer->injectContextToRequest($span->getContext(), $request);
+                }
 
                 if ($span->getContext()->isSampled()) {
                     $laravelTracer->addTag($span, HTTP_HOST, $request->getUri()->getHost());
