@@ -30,6 +30,10 @@ class Middleware
         /** @var Tracer $laravelTracer */
         $laravelTracer = app(Tracer::class);
         $path = $request->getPathInfo();
+        if (stripos($path, config('zipkin.api_prefix', '/')) !== 0) {
+            return $next($request);
+        }
+
         return $laravelTracer->rootSpan($laravelTracer->formatHttpPath($path), function (Span $span) use ($next, $request, $laravelTracer, $path) {
             if ($span->getContext()->isSampled()) {
                 $laravelTracer->addTag($span, HTTP_HOST, $request->getHttpHost());
