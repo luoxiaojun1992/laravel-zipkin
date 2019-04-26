@@ -17,6 +17,19 @@ use const Zipkin\Tags\HTTP_STATUS_CODE;
  */
 class Middleware
 {
+    private function needSample($request)
+    {
+        $path = $request->getPathInfo();
+        $apiPrefix = explode(',', config('zipkin.api_prefix', '/'));
+        foreach ($apiPrefix as $prefix) {
+            if (stripos($path, $prefix) === 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * Handle an incoming request.
      *
@@ -27,12 +40,13 @@ class Middleware
      */
     public function handle($request, \Closure $next)
     {
+        if (!$this->needSample($request)) {
+            return $next($request);
+        }
+
         /** @var Tracer $laravelTracer */
         $laravelTracer = app(Tracer::class);
         $path = $request->getPathInfo();
-        if (stripos($path, config('zipkin.api_prefix', '/')) !== 0) {
-            return $next($request);
-        }
 
         return $laravelTracer->rootSpan($laravelTracer->formatHttpPath($path), function (Span $span) use ($next, $request, $laravelTracer, $path) {
             if ($span->getContext()->isSampled()) {
