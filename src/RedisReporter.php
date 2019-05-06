@@ -7,8 +7,6 @@ use Illuminate\Support\Facades\Redis;
 use RuntimeException;
 use Zipkin\Recording\Span;
 use Zipkin\Reporter;
-use Zipkin\Reporters\Metrics;
-use Zipkin\Reporters\NoopMetrics;
 
 final class RedisReporter implements Reporter
 {
@@ -22,17 +20,10 @@ final class RedisReporter implements Reporter
      */
     private $options;
 
-    /**
-     * @var Metrics
-     */
-    private $reportMetrics;
-
     public function __construct(
-        array $options = [],
-        Metrics $reporterMetrics = null
+        array $options = []
     ) {
         $this->options = array_merge(self::DEFAULT_OPTIONS, $options);
-        $this->reportMetrics = $reporterMetrics ?: new NoopMetrics();
     }
 
     /**
@@ -49,18 +40,10 @@ final class RedisReporter implements Reporter
             return $span->toArray();
         }, $spans));
 
-        $this->reportMetrics->incrementSpans(count($spans));
-        $this->reportMetrics->incrementMessages();
-
-        $payloadLength = strlen($payload);
-        $this->reportMetrics->incrementSpanBytes($payloadLength);
-        $this->reportMetrics->incrementMessageBytes($payloadLength);
-
         try {
             $this->enqueue($payload);
         } catch (RuntimeException $e) {
-            $this->reportMetrics->incrementSpansDropped(count($spans));
-            $this->reportMetrics->incrementMessagesDropped($e);
+            //
         }
     }
 

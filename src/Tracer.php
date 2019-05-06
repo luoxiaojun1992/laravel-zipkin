@@ -99,7 +99,12 @@ class Tracer
      */
     private function createTracer()
     {
-        $endpoint = Endpoint::createFromGlobals()->withServiceName($this->serviceName);
+        $endpoint = Endpoint::create(
+            $this->serviceName,
+            array_key_exists('REMOTE_ADDR', $_SERVER) ? $_SERVER['REMOTE_ADDR'] : null,
+            null,
+            array_key_exists('REMOTE_PORT', $_SERVER) ? (int)$_SERVER['REMOTE_PORT'] : null
+        );
         $sampler = BinarySampler::createAsAlwaysSample();
         $this->tracing = TracingBuilder::create()
             ->havingLocalEndpoint($endpoint)
