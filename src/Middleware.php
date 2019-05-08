@@ -48,7 +48,7 @@ class Middleware
         $laravelTracer = app(Tracer::class);
         $path = $request->getPathInfo();
 
-        return $laravelTracer->rootSpan($laravelTracer->formatHttpPath($path), function (Span $span) use ($next, $request, $laravelTracer, $path) {
+        return $laravelTracer->span($laravelTracer->formatHttpPath($path), function (Span $span) use ($next, $request, $laravelTracer, $path) {
             if ($span->getContext()->isSampled()) {
                 $laravelTracer->addTag($span, HTTP_HOST, $request->getHttpHost());
                 $laravelTracer->addTag($span, HTTP_PATH, $path);
@@ -112,6 +112,6 @@ class Middleware
                     }
                 }
             }
-        }, null, \Zipkin\Kind\SERVER, true);
+        }, \Zipkin\Kind\SERVER, true);
     }
 }

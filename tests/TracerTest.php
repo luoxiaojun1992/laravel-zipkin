@@ -52,13 +52,13 @@ class TracerTest extends \PHPUnit\Framework\TestCase
             'sample_rate' => 1,
         ]);
 
-        $this->assertTrue($tracer->rootSpan('unit-test', function (\Zipkin\Span $span) use ($tracer) {
+        $this->assertTrue($tracer->span('unit-test', function (\Zipkin\Span $span) use ($tracer) {
             $this->assertTrue($tracer->span('unit-test-sub', function (\Zipkin\Span $span) {
                 return true;
-            }, $span->getContext(), \Zipkin\Kind\CLIENT));
+            }, \Zipkin\Kind\CLIENT));
 
             return true;
-        }, null, \Zipkin\Kind\SERVER, true));
+        }, \Zipkin\Kind\SERVER, true));
     }
 
     /**
@@ -92,12 +92,12 @@ class TracerTest extends \PHPUnit\Framework\TestCase
             'sample_rate' => 1,
         ]);
 
-        $this->assertTrue($tracer->rootSpan('unit-test', function (\Zipkin\Span $span) use ($tracer) {
+        $this->assertTrue($tracer->span('unit-test', function (\Zipkin\Span $span) use ($tracer) {
             $this->assertTrue($tracer->span('unit-test-sub', function (\Zipkin\Span $span) {
                 return true;
-            }, $span->getContext(), \Zipkin\Kind\CLIENT));
+            }, \Zipkin\Kind\CLIENT));
 
             return true;
-        }, null, \Zipkin\Kind\SERVER, true));
+        }, \Zipkin\Kind\SERVER, true));
     }
 }

@@ -82,6 +82,6 @@ class HttpClient extends GuzzleHttpClient
                         }
                     }
                 }
-            }, null, \Zipkin\Kind\CLIENT);
+            }, \Zipkin\Kind\CLIENT);
     }
 }
