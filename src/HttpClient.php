@@ -29,10 +29,11 @@ class HttpClient extends GuzzleHttpClient
      */
     public function send(RequestInterface $request, array $options = [], $spanName = null, $injectSpanCtx = true)
     {
+        /** @var Tracer $laravelTracer */
         $laravelTracer = app(Tracer::class);
         $path = $request->getUri()->getPath();
 
-        return $laravelTracer->span(
+        return $laravelTracer->clientSpan(
             isset($spanName) ? $spanName : $laravelTracer->formatHttpPath($path),
             function (Span $span) use ($request, $options, $laravelTracer, $path, $injectSpanCtx) {
                 //Inject trace context to api psr request
@@ -82,6 +83,6 @@ class HttpClient extends GuzzleHttpClient
                         }
                     }
                 }
-            }, \Zipkin\Kind\CLIENT);
+            });
     }
 }
