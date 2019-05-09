@@ -332,6 +332,21 @@ class Tracer
     }
 
     /**
+     * Formatting route path
+     *
+     * @param $route
+     * @return string
+     */
+    public function formatRoutePath($route)
+    {
+        if (strpos($route, '/') !== 0) {
+            $route = '/' . $route;
+        }
+
+        return $route;
+    }
+
+    /**
      * Add span tag
      *
      * @param Span $span

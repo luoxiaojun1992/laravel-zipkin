@@ -89,9 +89,9 @@ class Middleware
             } finally {
                 $route = $request->route();
                 if ($route instanceof Route) {
-                    $span->setName($request->route()->uri());
+                    $span->setName($laravelTracer->formatRoutePath($request->route()->uri()));
                 } elseif (is_string($route)) {
-                    $span->setName($route);
+                    $span->setName($laravelTracer->formatRoutePath($route));
                 }
                 if ($response) {
                     if ($span->getContext()->isSampled()) {
