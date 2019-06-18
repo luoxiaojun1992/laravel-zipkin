@@ -102,13 +102,17 @@ class Tracer
      */
     private function createTracer()
     {
-        $remotePort = \Illuminate\Support\Facades\Request::instance()->server('REMOTE_PORT');
-        $endpoint = Endpoint::create(
-            $this->serviceName,
-            \Illuminate\Support\Facades\Request::ip(),
-            null,
-            $remotePort ? (int)$remotePort : null
-        );
+        if (!\App::runningInConsole()) {
+            $remotePort = \Illuminate\Support\Facades\Request::instance()->server('REMOTE_PORT');
+            $endpoint = Endpoint::create(
+                $this->serviceName,
+                \Illuminate\Support\Facades\Request::ip(),
+                null,
+                $remotePort ? (int)$remotePort : null
+            );
+        } else {
+            $endpoint = Endpoint::create($this->serviceName);
+        }
         $sampler = BinarySampler::createAsAlwaysSample();
         $this->tracing = TracingBuilder::create()
             ->havingLocalEndpoint($endpoint)

@@ -43,10 +43,13 @@ class TracerTest extends \PHPUnit\Framework\TestCase
             ->andReturnFalse();
         $request->shouldReceive('hasHeader')->with('x-b3-parentspanid')
             ->andReturnFalse();
+        $request->shouldReceive('server')->with('REMOTE_PORT')
+            ->andReturnNull();
 
         //Mock Request Facade
         $requestFacade = M::mock('alias:\\Illuminate\\Support\\Facades\\Request');
         $requestFacade->shouldReceive('instance')->andReturn($request);
+        $requestFacade->shouldReceive('ip')->andReturnNull();
 
         $tracer = new \Lxj\Laravel\Zipkin\Tracer([
             'sample_rate' => 1,
