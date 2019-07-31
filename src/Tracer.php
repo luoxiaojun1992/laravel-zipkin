@@ -92,9 +92,10 @@ class Tracer
 
         $this->createTracer();
 
-        $this->listenDbQuery();
-
-        $this->listenRedisQuery();
+        if (!\App::runningInConsole()) {
+            $this->listenDbQuery();
+            $this->listenRedisQuery();
+        }
     }
 
     /**

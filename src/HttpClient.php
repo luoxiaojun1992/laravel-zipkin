@@ -24,18 +24,33 @@ class HttpClient extends GuzzleHttpClient
      * @param array $options
      * @param string $spanName
      * @param bool $injectSpanCtx
+     * @param bool $traceInConsole
      * @return mixed|\Psr\Http\Message\ResponseInterface|null
      * @throws \Exception
      */
-    public function send(RequestInterface $request, array $options = [], $spanName = null, $injectSpanCtx = true)
+    public function send(RequestInterface $request, array $options = [], $spanName = null, $injectSpanCtx = true, $traceInConsole = false)
     {
+        $sendRequest = function () use ($request, $options) {
+            try {
+                $response = parent::send($request, $options);
+                return $response;
+            } catch (\Exception $e) {
+                Log::error('CURL ERROR ' . $e->getMessage());
+                throw new \Exception('CURL ERROR ' . $e->getMessage());
+            }
+        };
+
+        if (\App::runningInConsole() && !$traceInConsole) {
+            return call_user_func($sendRequest);
+        }
+
         /** @var Tracer $laravelTracer */
         $laravelTracer = app(Tracer::class);
         $path = $request->getUri()->getPath();
 
         return $laravelTracer->clientSpan(
             isset($spanName) ? $spanName : $laravelTracer->formatHttpPath($path),
-            function (Span $span) use ($request, $options, $laravelTracer, $path, $injectSpanCtx) {
+            function (Span $span) use ($request, $sendRequest, $laravelTracer, $path, $injectSpanCtx) {
                 //Inject trace context to api psr request
                 if ($injectSpanCtx) {
                     $laravelTracer->injectContextToRequest($span->getContext(), $request);
@@ -61,11 +76,10 @@ class HttpClient extends GuzzleHttpClient
 
                 $response = null;
                 try {
-                    $response = parent::send($request, $options);
+                    $response = call_user_func($sendRequest);
                     return $response;
                 } catch (\Exception $e) {
-                    Log::error('CURL ERROR ' . $e->getMessage());
-                    throw new \Exception('CURL ERROR ' . $e->getMessage());
+                    throw $e;
                 } finally {
                     if ($response) {
                         if ($span->getContext()->isSampled()) {
