@@ -4,7 +4,7 @@
     "keywords": ["zipkin", "laravel"],
     "type": "library",
     "require": {
-        "openzipkin/zipkin": "~1.3",
+        "openzipkin/zipkin": "1.3.2",
         "psr/http-message": "^1.0",
         "guzzlehttp/guzzle": "^6.3",
         "cviebrock/laravel-elasticsearch": "~3.4"
