@@ -104,11 +104,13 @@ class Tracer
     private function createTracer()
     {
         if (!\App::runningInConsole()) {
+            $realIp = \Illuminate\Support\Facades\Request::ip();
+            $isIpV6 = substr_count($realIp, ':') > 1;
             $remotePort = \Illuminate\Support\Facades\Request::instance()->server('REMOTE_PORT');
             $endpoint = Endpoint::create(
                 $this->serviceName,
-                \Illuminate\Support\Facades\Request::ip(),
-                null,
+                (!$isIpV6) ? $realIp : null,
+                $isIpV6 ? $realIp : null,
                 $remotePort ? (int)$remotePort : null
             );
         } else {
