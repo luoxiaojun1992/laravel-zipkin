@@ -283,6 +283,7 @@ class Tracer
             array_pop($this->contextStack);
             if (count($this->contextStack) === 0) {
                 $this->clearDbStatistic();
+                $this->clearRedisStatistic();
             }
 
             if ($flush) {
@@ -295,6 +296,12 @@ class Tracer
     {
         $this->dbQueryTimes = [];
         $this->totalDbQueryDuration = [];
+    }
+
+    protected function clearRedisStatistic()
+    {
+        $this->redisExecTimes = [];
+        $this->totalRedisExecDuration = [];
     }
 
     /**
