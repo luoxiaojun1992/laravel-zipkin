@@ -281,11 +281,20 @@ class Tracer
 
             $span->finish();
             array_pop($this->contextStack);
+            if (count($this->contextStack) === 0) {
+                $this->clearDbStatistic();
+            }
 
             if ($flush) {
                 $this->flushTracer();
             }
         }
+    }
+
+    protected function clearDbStatistic()
+    {
+        $this->dbQueryTimes = [];
+        $this->totalDbQueryDuration = [];
     }
 
     /**
